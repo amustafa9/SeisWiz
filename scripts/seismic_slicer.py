@@ -34,6 +34,7 @@ class SeismicSlicer():
         self.current_frame_1 = 0
         self.current_frame_2 = 0
         self.current_frame_3 = 0
+        self.clip_factor = 3
         
         # initialize gui and draw initial views
         self.initialize_slicer()
@@ -42,6 +43,7 @@ class SeismicSlicer():
         self.frame_slider1.on_changed(self.update)
         self.frame_slider2.on_changed(self.update)
         self.frame_slider3.on_changed(self.update)
+        self.clip_slider.on_changed(self.update)
 
         # show figure
         plt.show()
@@ -83,6 +85,9 @@ class SeismicSlicer():
         init_vals = (self.current_frame_1, self.current_frame_2, self.current_frame_3)
         frame_slider1, frame_slider2, frame_slider3 = create_section_sliders(nil, nxl, nz, init_vals)
 
+        # create slider to apply clipping to seismic views
+        clip_slider = create_clip_slider()
+
         self.fig = fig
         self.img1 = img1
         self.img2 = img2
@@ -93,6 +98,7 @@ class SeismicSlicer():
         self.frame_slider1 = frame_slider1
         self.frame_slider2 = frame_slider2
         self.frame_slider3 = frame_slider3
+        self.clip_slider = clip_slider
 
     def update(self, val):
         """update views based off user input to sliders"""
@@ -101,6 +107,7 @@ class SeismicSlicer():
         self.current_frame_1 = int(self.frame_slider1.val)
         self.current_frame_2 = int(self.frame_slider2.val)
         self.current_frame_3 = int(self.frame_slider3.val)
+        self.clip_factor = int(self.clip_slider.val)
 
         # update inline/crossline view
         self.img1.set_array(plot_section_slices(self.seismic, self.current_frame_1, self.current_frame_2))
@@ -127,6 +134,10 @@ class SeismicSlicer():
         # show legend
         self.img1.axes.legend()
 
+        # apply clipping to image views
+        self.img1.set_clim(vmin=-self.clip_factor*self.std, vmax=self.clip_factor*self.std)
+        self.img2.set_clim(vmin=-self.clip_factor * self.std, vmax=self.clip_factor * self.std)
+
         self.fig.canvas.draw_idle()
         clear_output(wait=True)
         display(self.fig)
@@ -138,7 +149,7 @@ class SeismicSlicer():
         # create inline/crossline view and set title
         img = ax.imshow(plot_section_slices(self.seismic, self.current_frame_1, self.current_frame_2),
                             extent=(0, self.seismic.shape[0]+self.seismic.shape[1], self.samples.max(), self.samples.min()),
-                            cmap=self.cmap, vmin=-3*self.std, vmax=3*self.std, aspect='auto')
+                            cmap=self.cmap, vmin=-self.clip_factor*self.std, vmax=self.clip_factor*self.std, aspect='auto')
 
         ax.set_xticks([])
         ax.set_ylabel('Depth')

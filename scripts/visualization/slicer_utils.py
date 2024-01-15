@@ -114,18 +114,28 @@ def create_section_sliders(nil, nxl, nz, init_vals=(0,0,0)):
         """
 
     # Add slider for interactive frame navigation along inline direction
-    axframe1 = plt.axes([0.1, 0.01, 0.65, 0.03], facecolor='lightgoldenrodyellow')
+    axframe1 = plt.axes([0.1, 0.01, 0.5, 0.03], facecolor='lightgoldenrodyellow')
     frame_slider1 = Slider(axframe1, 'Inline Num', 0, nil - 1, valinit=init_vals[0], valstep=1)
 
     # Add slider for interactive frame navigation along crossline direction
-    axframe2 = plt.axes([0.1, 0.06, 0.65, 0.03], facecolor='lightgoldenrodyellow')
+    axframe2 = plt.axes([0.1, 0.06, 0.5, 0.03], facecolor='lightgoldenrodyellow')
     frame_slider2 = Slider(axframe2, 'Xline Num', 0, nxl - 1, valinit=init_vals[1], valstep=1)
 
     # Add slider for interactive frame navigation along time/depth direction
-    axframe3 = plt.axes([0.1, 0.11, 0.65, 0.03], facecolor='lightgoldenrodyellow')
+    axframe3 = plt.axes([0.1, 0.11, 0.5, 0.03], facecolor='lightgoldenrodyellow')
     frame_slider3 = Slider(axframe3, 'Depth Slice Num', 0, nz - 1, valinit=init_vals[2], valstep=1)
 
     return frame_slider1, frame_slider2, frame_slider3
+
+
+def create_clip_slider():
+    """function creates and returns a slider object to manipulate the clipping applied to the seismic images in terms
+    of its standard deviation"""
+
+    clip_axis = plt.axes([0.7, 0.06, 0.25, 0.03], facecolor='lightgoldenrodyellow')
+    clip_slider = Slider(clip_axis, 'Clip', 1, 10, valinit=3, valstep=1)
+
+    return clip_slider
 
 
 def list_files_in_directory(directory_path):
