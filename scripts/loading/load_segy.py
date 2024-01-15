@@ -53,11 +53,11 @@ def segy2npy(segy_path):
     segy_file = segyio.open(segy_path, ignore_geometry=True)
 
     # get a list of all crosslines in the file
-    all_xlines = get_segy_crosslines(segy_file, skip=50)
+    all_xlines = get_segy_crosslines(segy_file, skip=20)
     unique_xlines = np.sort(np.unique(all_xlines)).astype(int)
 
     # get a list of all inlines in the file
-    all_ilines = get_segy_inlines(segy_file, skip=50)
+    all_ilines = get_segy_inlines(segy_file, skip=20)
     unique_ilines = np.sort(np.unique(all_ilines)).astype(int)
 
     # array of depth\time samples
