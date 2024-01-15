@@ -10,8 +10,7 @@ class SeismicSlicer():
         """initializes class object by storing path to segy file"""
 
         # read segy file and extract seismic and other survey parameters
-        seismic, ilines, xlines, samples = segy2npy(path_segy, fast_scan=fast_scan, min_iline=None, max_iline=None,
-                                                    min_xline=None, max_xline=None, min_time=None, max_time=None)
+        seismic, ilines, xlines, samples = segy2npy(path_segy)
 
         self.seismic = seismic
         self.ilines = np.sort(ilines)
@@ -21,9 +20,15 @@ class SeismicSlicer():
         self.horizon_flag = False  # Only visualize seismic
 
         # also plot horizon is horizon path provided
-        if 'horizon_file_path' in kwargs:
+        if kwargs['horizon_file_path'] is not None:
             self.horizon_flag = True
             self.horizon_file_path = kwargs['horizon_file_path']
+
+        # Use user-specified cmap if provided
+        if kwargs['cmap'] is not None:
+            self.cmap = kwargs['cmap']
+        else:
+            self.cmap = 'gray'  # use grayscale colormap otherwise
 
         # initialize initial frame values along all three directions
         self.current_frame_1 = 0
@@ -133,7 +138,7 @@ class SeismicSlicer():
         # create inline/crossline view and set title
         img = ax.imshow(plot_section_slices(self.seismic, self.current_frame_1, self.current_frame_2),
                             extent=(0, self.seismic.shape[0]+self.seismic.shape[1], self.samples.max(), self.samples.min()),
-                            cmap='gray', vmin=-3*self.std, vmax=3*self.std, aspect='auto')
+                            cmap=self.cmap, vmin=-3*self.std, vmax=3*self.std, aspect='auto')
 
         ax.set_xticks([])
         ax.set_ylabel('Depth')
@@ -149,7 +154,7 @@ class SeismicSlicer():
         # create depth slice view and set title
         img = ax.imshow(plot_depth_slice(self.seismic, self.current_frame_3),
                             extent=(self.xlines.min(), self.xlines.max(), self.ilines.max(), self.ilines.min()),
-                            cmap='gray', vmin=-3*self.std, vmax=3*self.std, aspect='auto')
+                            cmap=self.cmap, vmin=-3*self.std, vmax=3*self.std, aspect='auto')
 
         ax.set_xlabel('Crossline Numbers')
         ax.set_ylabel('Inline Numbers')
