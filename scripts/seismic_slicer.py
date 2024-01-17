@@ -1,6 +1,6 @@
 from IPython.display import display, clear_output
-from loading.load_segy import segy2npy
-from visualization.slicer_utils import *
+from utils.loading import segy2npy
+from utils.visualization import *
 from pathlib import Path
 
 
