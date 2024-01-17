@@ -1,14 +1,31 @@
 # 💡 Introduction
-SeisWiz is a collection of handy seismic loading, processing, and visualization functions for seismic data. It has
-been designed specifically keeping in mind the needs of machine learning-based seismic interpretation projects in Python.
-However, certain functions may also find their uses for non-interpretation applications. Some of the functions that are
-currently supported (or we intend to support in the future) include:
+Despite some of its incompatibilities with Python, the SEG-Y format still happens to be a popular choice to store seismic datasets
+in. Professional seismic visualization and interpretation softwares like Petrel come with expensive licenses that puts them out of reach 
+for ML enthusiasts looking to apply their skills for interpretation. Python-based 3D visualization engines like Mayavi 
+etc., are hard to sometimes configure and install. Moreover, by converting SEG-Y formatted seismic to 3D numpy arrays, they 
+lose sense of the actualy geometry of the survey in terms of its absolute crossline, inline, and depth/time values. They are
+thus not able to load interpretations created by professional softwares on the seismic data in terms of the actual survey geometry, such as horizons.
 
-1. Loading unstructured seismic volumes in Python from .segy files
-2. Performing common processing operations to loaded volumes, including scaling, nomalization etc.
-3. Visualizing seismic data in both 3D and 2D, co-rendering ML predictions with the original seismic etc. 
-4. Reading ML predictions or processed seismic volumes back into formats compatible with professional interpretaion
-   softwares such as Petrel, OpendTect etc.
+
+SeisWiz is a light-weight Matplotlib-based seismic visualization tool that aims to overcome many of the shortcomings with Python-based seismic 
+viewers described above. It has a minimal number of dependencies that are for the most part just standard Python packages people
+already work with 90% of the time. It offers an interactive Matplotlib environment to inspect seismic volumes stored in SEG-Y format, 
+provides support for multi-view visualization that makes it easy to make correspondences in three dimensions, and further allows to load
+seismic horizons produced by software such as Petrel to view along with the seismic data in the background.  
+
+The current functionality includes:
+
+✅ Loading unstructured seismic volumes in Python from .segy files (where `segyio.cube` does not work) <br>
+
+✅ Multi-view support to concurrently visualize orthogonal slices along all three axes in a 3D seismic volume <br>
+
+✅ Sliders to allow dynamic scrolling of all the various slices displayed in the interactive Matplotlib environment <br>
+
+✅ Positional markers to convey the relative positions of the various slices with respect to each other <br>
+
+✅ Dynamically changing the saturation applied to grayscale seismic images <br>
+
+✅ Loading horizon-picks formatted as text files to visualize along with the seismic data in the background <br>
 
 # 💻 Installation
 To install SeisWiz, first create an Anaconda environment in a terminal by running
@@ -41,7 +58,14 @@ python scripts/main.py -i <path/to/segy>
 This should bring up a matplotlib figure like the one shown below:
 ![image](figs/basic_mode_grayscale.gif)
 
-[write instructions explaining the figure above]  
+There are two images that you see on the figure above. The image on the left is a stitch of the two orthogonal 
+sectional views (inline and crossline) through the seismic volume joined at the vertical black line. The portion of the 
+image left of this black line is the current inline section (as selected on the inline slider) and the portion of the image to the
+right of this line is the current crossline section (as selected on the crossline slider). 
+
+The horizontal black line on this image shows the position of the current depth/time slice through the volume (as selected 
+on the depth/time slider). The depth/time slice shows all of the inline numbers on the vertical axis
+and crossline numbers on the y-axis.
 
 To render the seismic data in a different colormap, you can specify a matplotlib-compatible 
 colormap using the `-cmap` argument. See example below:
@@ -83,6 +107,15 @@ This should result in the following interactive plot where multiple horizons can
 visualized along with the seismic in the background. 
 
 ![image](figs/all_horizons.gif)
+
+# ✌ Tips and Tricks
+1. To visualize the full length of inline sections, move the crossline slider all the way to its maximum position. By scrolling
+   the inline slider, you will now be looking at the entire width of the inlines.
+2. To visualize the full length of crossline sections, move the inline slider all the way to its lowest position. By scrolling
+   the crossline slider, you will now be looking at the entire width of the crosslines.
+3. You can use the zoom function in matplotlib to analyze a window of interest (on either the sectional or time slice views) in more detail.
+   You can scroll through the volume keeping the zoom function on too.
+
 
 # 🔧 Issues 
 If you run into any issues with installation or execution of the instructions above, please feel free to reach out to me 
