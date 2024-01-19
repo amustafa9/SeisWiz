@@ -12,12 +12,20 @@ class SeismicSlicer():
         # read segy file and extract seismic and other survey parameters
         seismic, ilines, xlines, samples = segy2npy(path_segy)
 
+        # read attribute volume if provided
+        if 'att' in kwargs:
+            att_path = kwargs['att']
+            self.attribute_vol, _, _, _ = segy2npy(att_path)
+            self.attr_flag = True  # to let other functions know an attribute was loaded
+        else:
+            self.attr_flag = False
+
         self.seismic = seismic
         self.ilines = np.sort(ilines)
         self.xlines = np.sort(xlines)
         self.samples = np.sort(samples)
         self.std = seismic.std()
-        self.horizon_flag = False  # Only visualize seismic
+        self.horizon_flag = False  # No horizons provided
 
         # also plot horizon is horizon path provided
         if kwargs['horizon_file_path'] is not None:
@@ -57,6 +65,10 @@ class SeismicSlicer():
         # initialize section view
         img1 = self.init_section_view(ax[0])
 
+        # initialize attribute view if true
+        if self.attr_flag:
+            self.img1_attr = self.init_attr_section_view(ax[0])
+
         # initialize horizon plot
         if self.horizon_flag:
             if Path(self.horizon_file_path).is_file():  # check if path is a single file or a directory of horizons
@@ -73,6 +85,10 @@ class SeismicSlicer():
 
         # initialize depth view
         img2 = self.init_depth_view(ax[1])
+
+        # initialize depth view for attribute
+        if self.attr_flag:
+            self.img2_attr = self.init_attr_depth_view(ax[1])
         
         # draw positional markers on sectional view
         crossline_marker, depth_marker = self.draw_positional_markers_section_view(img1)
@@ -138,6 +154,11 @@ class SeismicSlicer():
         self.img1.set_clim(vmin=-self.clip_factor*self.std, vmax=self.clip_factor*self.std)
         self.img2.set_clim(vmin=-self.clip_factor * self.std, vmax=self.clip_factor * self.std)
 
+        # update attrribute slice if also loaded
+        if self.attr_flag:
+            self.img1_attr.set_array(plot_section_slices(self.attribute_vol, self.current_frame_1, self.current_frame_2))
+            self.img2_attr.set_array(plot_depth_slice(self.attribute_vol, self.current_frame_3))
+
         self.fig.canvas.draw_idle()
         clear_output(wait=True)
         display(self.fig)
@@ -148,13 +169,24 @@ class SeismicSlicer():
 
         # create inline/crossline view and set title
         img = ax.imshow(plot_section_slices(self.seismic, self.current_frame_1, self.current_frame_2),
-                            extent=(0, self.seismic.shape[0]+self.seismic.shape[1], self.samples.max(), self.samples.min()),
-                            cmap=self.cmap, vmin=-self.clip_factor*self.std, vmax=self.clip_factor*self.std, aspect='auto')
+                        extent=(0, self.seismic.shape[0]+self.seismic.shape[1], self.samples.max(), self.samples.min()),
+                        cmap=self.cmap, vmin=-self.clip_factor*self.std, vmax=self.clip_factor*self.std, aspect='auto')
 
         ax.set_xticks([])
         ax.set_ylabel('Depth')
         ax.set_xlabel('Sample Position Laterally')
         img.axes.set_title('Inline\Crossline View')
+
+        return img
+
+    def init_attr_section_view(self, ax):
+        """function creates and populates an artist to show an image consisting
+         of the stitched inline and crossline views through the volume"""
+
+        # create inline/crossline view and set title
+        img = ax.imshow(plot_section_slices(self.attribute_vol, self.current_frame_1, self.current_frame_2),
+                        extent=(0, self.seismic.shape[0]+self.seismic.shape[1], self.samples.max(), self.samples.min()),
+                        cmap='Reds', vmin=0, vmax=1, aspect='auto', alpha=0.5)
 
         return img
 
@@ -164,12 +196,23 @@ class SeismicSlicer():
 
         # create depth slice view and set title
         img = ax.imshow(plot_depth_slice(self.seismic, self.current_frame_3),
-                            extent=(self.xlines.min(), self.xlines.max(), self.ilines.max(), self.ilines.min()),
-                            cmap=self.cmap, vmin=-3*self.std, vmax=3*self.std, aspect='auto')
+                        extent=(self.xlines.min(), self.xlines.max(), self.ilines.max(), self.ilines.min()),
+                        cmap=self.cmap, vmin=-3*self.std, vmax=3*self.std, aspect='auto')
 
         ax.set_xlabel('Crossline Numbers')
         ax.set_ylabel('Inline Numbers')
         img.axes.set_title('Depth View')
+
+        return img
+
+    def init_attr_depth_view(self, ax):
+        """function creates and populates an artist to show an image consisting
+         of the depth view through the volume"""
+
+        # create depth slice view and set title
+        img = ax.imshow(plot_depth_slice(self.attribute_vol, self.current_frame_3),
+                        extent=(self.xlines.min(), self.xlines.max(), self.ilines.max(), self.ilines.min()),
+                        cmap='Reds', vmin=0, vmax=1, alpha=0.5, aspect='auto')
 
         return img
 
