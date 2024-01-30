@@ -138,6 +138,16 @@ def create_clip_slider():
     return clip_slider
 
 
+def create_threshold_slider(min, max):
+    """function creates and returns a slider object to perform thresholding on attribute volume"""
+
+    thresh_axis = plt.axes([0.7, 0.01, 0.25, 0.03], facecolor='lightgoldenrodyellow')
+    attr_range = np.linspace(min, max, 10)
+    threshold_slider = Slider(thresh_axis, 'Threshold', min, max, valinit=attr_range[4], valstep=attr_range[1] - attr_range[0])
+
+    return threshold_slider
+
+
 def list_files_in_directory(directory_path):
     path_obj = Path(directory_path)
 
@@ -146,3 +156,16 @@ def list_files_in_directory(directory_path):
 
     return files
 
+
+def rescale(arr):
+    arr_min = arr.min()
+    arr_max = arr.max()
+    return (arr - arr_min) / (arr_max - arr_min)
+
+
+def threshold(arr, thresh, min, max):
+    arr_threshold = arr.copy()
+    mask = arr_threshold<=thresh
+    arr_threshold[mask] = min
+    arr_threshold[~mask] = max
+    return arr_threshold
