@@ -13,10 +13,13 @@ class SeismicSlicer():
         seismic, ilines, xlines, samples = segy2npy(path_segy)
 
         # read attribute volume if provided
-        if 'att' in kwargs:
+        if kwargs['att'] is not None:
             att_path = kwargs['att']
             self.attribute_vol, _, _, _ = segy2npy(att_path)
+            self.attr_min = self.attribute_vol.min()
+            self.attr_max = self.attribute_vol.max()
             self.attr_flag = True  # to let other functions know an attribute was loaded
+            self.threshold = (self.attr_min + self.attr_max) / 2
         else:
             self.attr_flag = False
 
@@ -52,6 +55,9 @@ class SeismicSlicer():
         self.frame_slider2.on_changed(self.update)
         self.frame_slider3.on_changed(self.update)
         self.clip_slider.on_changed(self.update)
+
+        if self.attr_flag:
+            self.threshold_slider.on_changed(self.update)
 
         # show figure
         plt.show()
@@ -104,6 +110,10 @@ class SeismicSlicer():
         # create slider to apply clipping to seismic views
         clip_slider = create_clip_slider()
 
+        # create slider to apply thresholding to attribute array if loaded
+        if self.attr_flag:
+            self.threshold_slider = create_threshold_slider(min=self.attr_min, max=self.attr_max)
+
         self.fig = fig
         self.img1 = img1
         self.img2 = img2
@@ -124,6 +134,9 @@ class SeismicSlicer():
         self.current_frame_2 = int(self.frame_slider2.val)
         self.current_frame_3 = int(self.frame_slider3.val)
         self.clip_factor = int(self.clip_slider.val)
+
+        if self.attr_flag:
+            self.threshold = self.threshold_slider.val
 
         # update inline/crossline view
         self.img1.set_array(plot_section_slices(self.seismic, self.current_frame_1, self.current_frame_2))
@@ -156,8 +169,17 @@ class SeismicSlicer():
 
         # update attrribute slice if also loaded
         if self.attr_flag:
-            self.img1_attr.set_array(plot_section_slices(self.attribute_vol, self.current_frame_1, self.current_frame_2))
-            self.img2_attr.set_array(plot_depth_slice(self.attribute_vol, self.current_frame_3))
+            # extract and apply threshold to attribute slices
+            section_attr_slice_thresholded = threshold(plot_section_slices(self.attribute_vol, self.current_frame_1, self.current_frame_2), self.threshold, self.attr_min, self.attr_max)
+            depth_attr_slice_thresholded = threshold(plot_depth_slice(self.attribute_vol, self.current_frame_3), self.threshold, self.attr_min, self.attr_max)
+
+            # plot attribute slices
+            self.img1_attr.set_array(section_attr_slice_thresholded)
+            self.img2_attr.set_array(depth_attr_slice_thresholded)
+
+            # apply clipping to attribute views
+            self.img1_attr.set_clim(vmin=self.attr_min, vmax=self.attr_max)
+            self.img2_attr.set_clim(vmin=self.attr_min, vmax=self.attr_max)
 
         self.fig.canvas.draw_idle()
         clear_output(wait=True)
@@ -184,9 +206,10 @@ class SeismicSlicer():
          of the stitched inline and crossline views through the volume"""
 
         # create inline/crossline view and set title
-        img = ax.imshow(plot_section_slices(self.attribute_vol, self.current_frame_1, self.current_frame_2),
-                        extent=(0, self.seismic.shape[0]+self.seismic.shape[1], self.samples.max(), self.samples.min()),
-                        cmap='Reds', vmin=0, vmax=1, aspect='auto', alpha=0.5)
+        attr_slice = plot_section_slices(self.attribute_vol, self.current_frame_1, self.current_frame_2)
+        attr_slice_thresholded = threshold(attr_slice, self.threshold, self.attr_min, self.attr_max)
+        img = ax.imshow(attr_slice_thresholded, extent=(0, self.seismic.shape[0]+self.seismic.shape[1],
+                        self.samples.max(), self.samples.min()), cmap='Reds', vmin=self.attr_min, vmax=self.attr_max, aspect='auto', alpha=0.5)
 
         return img
 
@@ -210,9 +233,10 @@ class SeismicSlicer():
          of the depth view through the volume"""
 
         # create depth slice view and set title
-        img = ax.imshow(plot_depth_slice(self.attribute_vol, self.current_frame_3),
-                        extent=(self.xlines.min(), self.xlines.max(), self.ilines.max(), self.ilines.min()),
-                        cmap='Reds', vmin=0, vmax=1, alpha=0.5, aspect='auto')
+        attr_slice = plot_depth_slice(self.attribute_vol, self.current_frame_3)
+        attr_slice_thresholded = threshold(attr_slice, self.threshold, self.attr_min, self.attr_max)
+        img = ax.imshow(attr_slice_thresholded, extent=(self.xlines.min(), self.xlines.max(), self.ilines.max(), self.ilines.min()),
+                        cmap='Reds', vmin=self.attr_min, vmax=self.attr_max, alpha=0.5, aspect='auto')
 
         return img
 
